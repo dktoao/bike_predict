@@ -5,15 +5,16 @@ Python script with various function to predict the usage of ride share bikes
 # Imports
 from random import sample
 
-from numpy import array, zeros, dot, sqrt, log, sum, average
+from numpy import array, zeros, dot, sqrt, log, sum
 from numpy.linalg import pinv
 
 
-def import_data(file_name, output=True):
+def import_data(file_name, output=True, col_skip=[]):
     """
     Imports the CSV file with the
 
     :param file_name: name of the csv file with training data
+    :param output: if the file has output data
     :return: numpy arrays (A, b) with the data matrix and solution
     """
 
@@ -32,8 +33,9 @@ def import_data(file_name, output=True):
             hour = time.split(':')[0]
 
             # Concatenate with the rest of the data
+            pts = [x for x in range(0, 12) if x not in col_skip]
             clean_data = [year, month, day, hour]
-            clean_data.extend(raw_data_point[2:8])
+            clean_data.extend(raw_data_point[1:9])
 
             # Convert to float and append
             clean_data = [float(x) for x in clean_data]
@@ -46,9 +48,9 @@ def import_data(file_name, output=True):
         k += 1
 
     if output:
-        return array(data_matrix), array(training_vector)
+        return array(data_matrix)[:, pts], array(training_vector)
     else:
-        return array(data_matrix)
+        return array(data_matrix)[:, pts]
 
 
 def write_data(data, result, file_name):
@@ -76,30 +78,31 @@ def write_data(data, result, file_name):
             int(data[n, 2]),
             int(data[n, 3]),
             int(val)),
-            file=out_file)
+            file=out_file
+        )
 
 
-def evaluate_predictor(training_data, training_outcomes, predictor, train_fraction=0.9, n_rounds=5, **other_args):
+def evaluate_predictor(training_data, training_outcomes, predictor, train_fraction=0.9, n_trials=5):
     """
     Evaluates the performance of the function "predictor" without having to enter
-    results into kaggle. Divides the know
+    results into kaggle. Divides the known data into random sets and evaluates the
+    results against the rest.
 
-    :param a: Data set with known result
-    :param y: know result of A
+    :param training_data: Data set with known result
+    :param training_outcomes: know result of A
     :param predictor: function that takes arguments func(b, a, y) and returns a prediction
     :param train_fraction: percent of data to use for training
-    :param n_rounds: number of times to evaluate the function
-    :param other_args: other arguments to pass to the evaluation function by keyword
+    :param n_trials: number of times to evaluate the function
     :return: Float value representing the predicted RMSLE error
     """
 
-    outcomes = zeros(n_rounds)
+    outcomes = zeros(n_trials)
     data_length = training_data.shape[0]
     num_samples = int(data_length * train_fraction)
     num_tests = data_length - num_samples
     all_indices = range(data_length)
 
-    for round in range(n_rounds):
+    for trial in range(n_trials):
         # Divide data array into training set and
         training_indices = sample(all_indices, num_samples)
         training_indices.sort()
@@ -115,44 +118,40 @@ def evaluate_predictor(training_data, training_outcomes, predictor, train_fracti
         # Predict outcomes and save values
         predicted_outcome = predictor(sampled_test_data, sampled_training_data, sampled_training_outcomes)
         rmsle = sqrt((1/num_tests)*sum((log(predicted_outcome + 1) - log(sampled_test_outcomes + 1))**2))
-        outcomes[round] = rmsle
+        outcomes[trial] = rmsle
 
     return outcomes
 
 
-
-
-
-
-def simple_linear_regression(b, a, y):
+def simple_linear_regression(test_data, training_data, training_outcomes):
     """
     Predicts result of data set B from similar data set A with known result y
 
-    :param b: Data set with no know result
-    :param a: Data set with known result
-    :param y: know result of A
+    :param test_data: Data set with no known result
+    :param training_data: Data set with known result
+    :param training_outcomes: known result of A
     :return: Predicted result from data set B
     """
 
-    # Create the matrix for the linear equations
-    n_cols, n_rows = a.shape
-    l = zeros((n_cols, 2*n_rows))
+    # Create the matrix for training matrix
+    n_rows, n_cols = training_data.shape
+    train_matrix = zeros((n_rows, n_cols + 1))
     for row in range(n_rows):
         for col in range(n_cols):
-            l[col, 2*row] = a[col, row]
-            l[col, 2*row + 1] = 1
+            train_matrix[row, col] = training_data[row, col]
+        train_matrix[row, n_cols] = 1
 
     # Create matrix for the unknown linear equation
-    n_cols, n_rows = b.shape
-    bl = zeros((n_cols, 2*n_rows))
+    n_rows, n_cols = test_data.shape
+    predict_matrix = zeros((n_rows, n_cols + 1))
     for row in range(n_rows):
         for col in range(n_cols):
-            bl[col, 2*row] = b[col, row]
-            bl[col, 2*row + 1] = 1
+            predict_matrix[row, col] = test_data[row, col]
+        predict_matrix[row, n_cols] = 1
 
     # Find new function weights
-    w = dot(pinv(l), y)
-    result = dot(bl, w)
+    w = dot(pinv(train_matrix), training_outcomes)
+    result = dot(predict_matrix, w)
     result = result.clip(0)
     # Return the predicted values
     return result

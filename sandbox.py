@@ -1,24 +1,13 @@
 import predict_bike_use as pbu
-from numpy import mean, var
-from numpy import dot, zeros
-from numpy import array
-from numpy import abs
-from numpy.linalg import pinv
-from sklearn import svm
+from numpy import mean, var, array, diag
+from scipy.linalg import svd
+from sklearn import linear_model
+import matplotlib.pyplot as plt
 
-a, y = pbu.import_data('train.csv')
-b = pbu.import_data('test.csv', False)
-
-# Support Vector Regression
-#clf = svm.SVR(kernel='poly', C=1e2, degree=2)
-#clf.fit(A, b)
-#result = zeros((B.shape[0], 1))
-#for n, val in enumerate(B[:]):
-#    result[n] = clf.predict(val)
+# Load data from csv files
+a, y = pbu.import_data('train.csv')  #, col_skip=[4, 9])
+b = pbu.import_data('test.csv', False)  #, col_skip=[4, 9])
 
 # Simple linear regression
-out = pbu.evaluate_predictor(a, y, pbu.simple_linear_regression)
-print(out)
-print(mean(out))
-print(var(out))
-
+#out = pbu.evaluate_predictor(a, y, pbu.simple_linear_regression, n_trials=5)
+#print('Mean: {0:.3e}, Var: {1:.3e}'.format(mean(out), var(out)))
