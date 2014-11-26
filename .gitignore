@@ -1,0 +1,14 @@
+# IDE files
+/.idea
+
+# Other Data
+/data
+
+# compiled files
+*.pyc
+/__pycache__
+
+
+# Any csv files
+*.csv
+
