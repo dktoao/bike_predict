@@ -7,6 +7,7 @@ from random import sample
 
 from numpy import array, zeros, dot, sqrt, log, sum
 from numpy.linalg import pinv
+from sklearn.svm import SVR
 
 
 def import_data(file_name, output=True, col_skip=[]):
@@ -82,7 +83,7 @@ def write_data(data, result, file_name):
         )
 
 
-def evaluate_predictor(training_data, training_outcomes, predictor, train_fraction=0.9, n_trials=5):
+def evaluate_predictor(training_data, training_outcomes, predictor, train_fraction=0.9, n_trials=5, **aargs):
     """
     Evaluates the performance of the function "predictor" without having to enter
     results into kaggle. Divides the known data into random sets and evaluates the
@@ -96,12 +97,14 @@ def evaluate_predictor(training_data, training_outcomes, predictor, train_fracti
     :return: Float value representing the predicted RMSLE error
     """
 
+    # Select random indices for each trial
     outcomes = zeros(n_trials)
     data_length = training_data.shape[0]
     num_samples = int(data_length * train_fraction)
     num_tests = data_length - num_samples
     all_indices = range(data_length)
 
+    # Evaluate predictor
     for trial in range(n_trials):
         # Divide data array into training set and
         training_indices = sample(all_indices, num_samples)
@@ -116,20 +119,21 @@ def evaluate_predictor(training_data, training_outcomes, predictor, train_fracti
         sampled_test_outcomes = training_outcomes[test_indices]
 
         # Predict outcomes and save values
-        predicted_outcome = predictor(sampled_test_data, sampled_training_data, sampled_training_outcomes)
+        predicted_outcome = predictor(sampled_test_data, sampled_training_data, sampled_training_outcomes, **aargs)
         rmsle = sqrt((1/num_tests)*sum((log(predicted_outcome + 1) - log(sampled_test_outcomes + 1))**2))
         outcomes[trial] = rmsle
 
     return outcomes
 
 
-def simple_linear_regression(test_data, training_data, training_outcomes):
+def simple_linear_regression(test_data, training_data, training_outcomes, **kwargs):
     """
     Predicts result of data set B from similar data set A with known result y
 
     :param test_data: Data set with no known result
     :param training_data: Data set with known result
     :param training_outcomes: known result of A
+    :param kwargs: addtional arguments (ignored)
     :return: Predicted result from data set B
     """
 
@@ -155,3 +159,19 @@ def simple_linear_regression(test_data, training_data, training_outcomes):
     result = result.clip(0)
     # Return the predicted values
     return result
+
+
+def support_vector_regression(test_data, training_data, training_outcomes, **kwargs):
+    """
+    Predicts result of data set B from similar data set A with known result y
+
+    :param test_data: Data set with no known result
+    :param training_data: Data set with known result
+    :param training_outcomes: known result of A
+    :param kwargs: addtional arguments (ignored)
+    :return: Predicted result from data set B
+    """
+
+    predictor = SVR(**kwargs)
+    predictor.fit(training_data, training_outcomes)
+    return predictor.predict(test_data)

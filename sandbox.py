@@ -1,13 +1,39 @@
-import predict_bike_use as pbu
-from numpy import mean, var, array, diag
-from scipy.linalg import svd
-from sklearn import linear_model
+from numpy import column_stack
+from pandas import read_csv
 import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
 
-# Load data from csv files
-a, y = pbu.import_data('train.csv')  #, col_skip=[4, 9])
-b = pbu.import_data('test.csv', False)  #, col_skip=[4, 9])
+# Organize data
+data = read_csv('train.csv')
+hour = [int(item.split(' ')[1].split(':')[0]) for item in data['datetime']]
+date = [item.split(' ')[0].split('-') for item in data['datetime']]
+year = [int(item[0]) for item in date]
+month = [int(item[1]) for item in date]
+day = [int(item[2]) for item in date]
 
-# Simple linear regression
-#out = pbu.evaluate_predictor(a, y, pbu.simple_linear_regression, n_trials=5)
-#print('Mean: {0:.3e}, Var: {1:.3e}'.format(mean(out), var(out)))
+data['year'] = year
+data['month'] = month
+data['day'] = day
+data['hour'] = hour
+
+# Do a least squares fit in the x-axis
+X = data['hour'].as_matrix()
+X = X.reshape(-1, 1)
+print(X.shape)
+y = data['count'].as_matrix()
+y = y.reshape(-1, 1)
+model = LinearRegression(fit_intercept=False)
+model.fit(X, y)
+lin_out = model.predict(X)
+
+hourly_data = data.groupby('hour').mean()
+plt.figure('Average Bike Use By Hour')
+plt.title('Average Bike Use By Hour')
+plt.plot(hourly_data.index, hourly_data['count'], 'b', label='Actual Use')
+plt.plot(X, lin_out, 'r', label='Linear Best Fit')
+plt.xlim((0, 23))
+plt.grid()
+plt.legend(loc=0)
+plt.xlabel('Time of Day (hour)')
+plt.ylabel('Average Number of Bikes Rented')
+plt.show()
