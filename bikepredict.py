@@ -2,7 +2,7 @@ from numpy import mean, var
 from pandas import read_csv
 from sklearn.svm import SVR
 
-from predict_bike_use import evaluate_predictor, support_vector_regression, write_data
+from bikepredict_util import evaluate_predictor, support_vector_regression, write_data
 
 # Organize data
 data = []
