@@ -11,20 +11,28 @@ noisy_data = truth_data + randn(100) * 0.5
 # Plot the data
 plt.figure()
 
-for m, epsilon in enumerate([0.1, 1.0, 2.0]):
-    for n, C in enumerate([1, 10, 100]):
+arr_eps = [0.5, 0.9]
+num_epsilon = len(arr_eps)
+arr_C = [1]
+num_C = len(arr_C)
 
-        model = SVR(C=C, epsilon=epsilon)
+for m, eps in enumerate(arr_eps):
+    for n, C in enumerate(arr_C):
+
+        model = SVR(C=C, epsilon=eps)
         x_data = x_axis.reshape(-1, 1)
         model.fit(x_data, noisy_data)
         guess = model.predict(x_data)
 
-        ax = plt.subplot(3, 3, (m*3) + n + 1)
+        n_rows = max(num_epsilon, num_C)
+        n_cols = min(num_epsilon, num_C)
+
+        ax = plt.subplot(n_rows, n_cols, (m*n_cols) + n + 1)
         plt.plot(x_axis, guess)
-        plt.plot(x_axis, guess + epsilon, 'r-')
-        plt.plot(x_axis, guess - epsilon, 'r-')
+        plt.plot(x_axis, guess + eps, 'r-')
+        plt.plot(x_axis, guess - eps, 'r-')
         plt.scatter(x_axis, noisy_data, marker='+', color='g')
-        plt.title('C = {0:.2f}, eps = {1:.2f}'.format(C, epsilon))
+        plt.title('C = {0:.2f}, eps = {1:.2f}'.format(C, eps))
         plt.xlim([-pi, pi])
         ax.set_xticks([])
         ax.set_yticks([])

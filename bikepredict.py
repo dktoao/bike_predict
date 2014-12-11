@@ -1,7 +1,5 @@
-from numpy import column_stack, arange, mean, var
+from numpy import mean, var
 from pandas import read_csv
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 
 from predict_bike_use import evaluate_predictor, support_vector_regression, write_data

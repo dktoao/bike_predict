@@ -10,50 +10,6 @@ from numpy.linalg import pinv
 from sklearn.svm import SVR
 
 
-def import_data(file_name, output=True, col_skip=[]):
-    """
-    Imports the CSV file with the
-
-    :param file_name: name of the csv file with training data
-    :param output: if the file has output data
-    :return: numpy arrays (A, b) with the data matrix and solution
-    """
-
-    raw_data = open(file_name)
-    k = 0
-    data_matrix = []
-    training_vector = []
-
-    for line in raw_data:
-        if k != 0:
-            raw_data_point = line.strip().split(',')
-
-            # Get Date and time data
-            date, time = raw_data_point[0].split(' ')
-            year, month, day = date.split('-')
-            hour = time.split(':')[0]
-
-            # Concatenate with the rest of the data
-            pts = [x for x in range(0, 12) if x not in col_skip]
-            clean_data = [year, month, day, hour]
-            clean_data.extend(raw_data_point[1:9])
-
-            # Convert to float and append
-            clean_data = [float(x) for x in clean_data]
-            data_matrix.append(clean_data)
-
-            if output:
-                # Get the value for training
-                training_vector.append(float(raw_data_point[11]))
-
-        k += 1
-
-    if output:
-        return array(data_matrix)[:, pts], array(training_vector)
-    else:
-        return array(data_matrix)[:, pts]
-
-
 def write_data(data, result, file_name):
     """
     Writes data to format specified by kaggle, will zero out any negative value.
